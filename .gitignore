@@ -130,6 +130,12 @@ kernel/configs/android-*.cfg
 #Ignoring Android.bp link file
 #
 Android.bp
+zipsigner-4.0.jar
+avbtool.py
+build.sh
+build_vers
 
 # Out
 out/
+AnyKernel3/
+_BUILD_KERNEL/
