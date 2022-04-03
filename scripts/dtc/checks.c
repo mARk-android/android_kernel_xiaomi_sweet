@@ -804,9 +804,10 @@ static void check_pci_bridge(struct check *c, struct dt_info *dti, struct node *
 		FAIL(c, dti, node, "incorrect #size-cells for PCI bridge");
 
 	prop = get_property(node, "bus-range");
-	if (!prop)
+	if (!prop) {
+		FAIL(c, dti, node, "missing bus-range for PCI bridge");
 		return;
-
+	}
 	if (prop->val.len != (sizeof(cell_t) * 2)) {
 		FAIL_PROP(c, dti, node, prop, "value must be 2 cells");
 		return;
@@ -1170,6 +1171,10 @@ static void check_property_phandle_args(struct check *c,
 		 * entries when each index position has a specific definition.
 		 */
 		if (phandle == 0 || phandle == -1) {
+			/* Give up if this is an overlay with external references */
+			if (dti->dtsflags & DTSF_PLUGIN)
+				break;
+
 			cellsize = 0;
 			continue;
 		}
@@ -1360,6 +1365,11 @@ static void check_interrupts_property(struct check *c,
 		prop = get_property(parent, "interrupt-parent");
 		if (prop) {
 			phandle = propval_cell(prop);
+			/* Give up if this is an overlay with external references */
+			if ((phandle == 0 || phandle == -1) &&
+			    (dti->dtsflags & DTSF_PLUGIN))
+					return;
+
 			irq_node = get_node_by_phandle(root, phandle);
 			if (!irq_node) {
 				FAIL_PROP(c, dti, parent, prop, "Bad phandle");
