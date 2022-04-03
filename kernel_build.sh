@@ -3,7 +3,32 @@
 # Copyright (C) 2020 Starlight
 # Copyright (C) 2021 CloudedQuartz
 #
-
+# Specify colors utilized in the terminal
+    red=$(tput setaf 1)             #  red
+    grn=$(tput setaf 2)             #  green
+    ylw=$(tput setaf 3)             #  yellow
+    blu=$(tput setaf 4)             #  blue
+    ppl=$(tput setaf 5)             #  purple
+    cya=$(tput setaf 6)             #  cyan
+    txtbld=$(tput bold)             #  Bold
+    bldred=${txtbld}$(tput setaf 1) #  red
+    bldgrn=${txtbld}$(tput setaf 2) #  green
+    bldylw=${txtbld}$(tput setaf 3) #  yellow
+    bldblu=${txtbld}$(tput setaf 4) #  blue
+    bldppl=${txtbld}$(tput setaf 5) #  purple
+    bldcya=${txtbld}$(tput setaf 6) #  cyan
+    txtrst=$(tput sgr0)             #  Reset
+    rev=$(tput rev)                 #  Reverse color
+    pplrev=${rev}$(tput setaf 5)
+    cyarev=${rev}$(tput setaf 6)
+    ylwrev=${rev}$(tput setaf 3)
+    blurev=${rev}$(tput setaf 4)
+    blink=$(tput blink)
+    dim=$(tput dim)
+    clear=$(tput clear)
+    
+    
+    
 # Config
 DEVICE="sweet"
 DEFCONFIG="vendor/${DEVICE}_defconfig"
@@ -17,36 +42,9 @@ export ARCH SUBARCH
 KERNEL_IMG=$KERNEL_DIR/out/arch/$ARCH/boot/Image.gz
 KERNEL_DTBO=$KERNEL_DIR/out/arch/$ARCH/boot/dtbo.img
 
-TG_CHAT_ID="1139604865"
-TG_BOT_TOKEN="$BOT_API_KEY"
-# End config
-
-# Function definitions
-
-# tg_sendinfo - sends text through telegram
-tg_sendinfo() {
-	curl -s "https://api.telegram.org/bot$TG_BOT_TOKEN/sendMessage" \
-		-F parse_mode=html \
-		-F text="${1}" \
-		-F chat_id="${TG_CHAT_ID}" &> /dev/null
-}
-
-# tg_pushzip - uploads final zip to telegram
-tg_pushzip() {
-	MD5CHECK=$(md5sum "$1" | cut -d' ' -f1)
-	curl -F document=@"$1"  "https://api.telegram.org/bot$TG_BOT_TOKEN/sendDocument" \
-			-F chat_id=$TG_CHAT_ID \
-			-F caption="$2 | <b>MD5 Checksum : </b><code>$MD5CHECK</code>" \
-			-F parse_mode=html &> /dev/null
-}
-
-# tg_failed - uploads build log to telegram
-tg_failed() {
-    curl -F document=@"$LOG"  "https://api.telegram.org/bot$TG_BOT_TOKEN/sendDocument" \
-        -F chat_id=$TG_CHAT_ID \
-        -F caption="$((DIFF / 60))m $((DIFF % 60))s" \
-        -F parse_mode=html &> /dev/null
-}
+#export PATH="$HOME/proton-clang/bin:$PATH"
+#export LD_LIBRARY_PATH="$HOME/proton-clang/lib:$LD_LIBRARY_PATH"
+#export KBUILD_COMPILER_STRING="$($HOME/proton-clang/bin/clang --version | head -n 1 | perl -pe 's/\((?:http|git).*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//' -e 's/^.*clang/clang/')"
 
 # build_setup - enter kernel directory and get info for caption.
 # also removes the previous kernel image, if one exists.
@@ -69,7 +67,7 @@ build_kernel() {
     BUILD_START=$(date +"%s")
     make -j$(nproc --all) O=out \
                 PATH="$TC_DIR/bin:$PATH" \
-                CC="clang" \
+                CC="ccache clang" \
                 CROSS_COMPILE=$TC_DIR/bin/aarch64-linux-gnu- \
                 CROSS_COMPILE_ARM32=$TC_DIR/bin/arm-linux-gnueabi- \
                 LLVM=llvm- \
@@ -87,8 +85,8 @@ build_kernel() {
 build_end() {
 
 	if ! [ -a "$KERNEL_IMG" ]; then
-        echo -e "\n> Build failed, sending logs to Telegram."
-        tg_failed
+        echo -e "\n> Build failed!"
+#        tg_failed
         exit 1
     fi
 
@@ -99,7 +97,7 @@ build_end() {
 	mv "$KERNEL_DTBO" "$AK_DIR"
 	curl https://android.googlesource.com/platform/external/avb/+/refs/heads/master/avbtool.py?format=TEXT | base64 --decode > avbtool.py
 	python3 avbtool.py add_hash_footer --image dtbo.img --partition_size=33554432 --partition_name dtbo
-	ZIP_NAME=$KERNELNAME-$1-$COMMIT_SHA-$(date +%Y-%m-%d_%H%M)-UTC
+	ZIP_NAME=$KERNELNAME-$1-$(date +%Y-%m-%d_%H%M)
 	zip -r9 "$ZIP_NAME".zip ./* -x .git README.md ./*placeholder avbtool.py
 
 	# Sign zip if java is available
@@ -109,22 +107,22 @@ build_end() {
 		ZIP_NAME="$ZIP_NAME-signed.zip"
 	fi
 
-	tg_pushzip "$ZIP_NAME" "Time taken: <code>$((DIFF / 60))m $((DIFF % 60))s</code>"
-	echo -e "\n> Sent zip through Telegram.\n> File: $ZIP_NAME"
+#	tg_pushzip "$ZIP_NAME" "Time taken: <code>$((DIFF / 60))m $((DIFF % 60))s</code>"
+#	echo -e "\n> Sent zip through Telegram.\n> File: $ZIP_NAME"
 }
 
 # End function definitions
 
-COMMIT=$(git log --pretty=format:"%s" -1)
-COMMIT_SHA=$(git rev-parse --short HEAD)
-KERNEL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+#COMMIT=$(git log --pretty=format:"%s" -1)
+#COMMIT_SHA=$(git rev-parse --short HEAD)
+#KERNEL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-CAPTION=$(echo -e \
-"HEAD: <code>$COMMIT_SHA: </code><code>$COMMIT</code>
-Branch: <code>$KERNEL_BRANCH</code>")
+#CAPTION=$(echo -e \
+#"HEAD: <code>$COMMIT_SHA: </code><code>$COMMIT</code>
+#Branch: <code>$KERNEL_BRANCH</code>")
 
-tg_sendinfo "-- Build Triggered --
-$CAPTION"
+#tg_sendinfo "-- Build Triggered --
+#$CAPTION"
 
 # Build device 1
 build_setup
@@ -141,3 +139,28 @@ build_setup
 build_config $DEFCONFIG
 build_kernel
 build_end ${DEVICE}_stock-dimens
+
+
+
+
+    
+    #rm -rf $out
+   
+	echo -e "";
+	echo -e "";
+	echo -e ${blu}"                 _    _  _  _     _ _   _ _    "${txtrst};
+	echo -e ${blu}"    _ _ _ _     / \  |  _ \| | _ / _ \/ _ _|   "${txtrst};
+	echo -e ${grn}"   |  _   _ \  / _ \ | |_) | |/ / | | \_ _ \   "${txtrst};
+	echo -e ${ylw}"   | | | | | |/ _,_ \|  _ <|   <| |_| |_ _) |  "${txtrst};
+	echo -e ${red}"   |_| |_| |_/_/   \_\_| \_\_|\_|\_ _/ \_ _/   "${txtrst};
+	echo -e ${red}"     K E R N E L • G I N K G O • W I L L O W   "${txtrst};                                
+	echo -e ${blu}"                                               "${txtrst};
+	echo -e ${blu}"                                               "${txtrst};
+	echo -e ${ppl}"            Xiaomi Redmi Note 8/8T             "${txtrst};
+	echo -e ${ppl}"            by mARk-android@github             "${txtrst};
+	echo -e ${blu}"                                               "${txtrst};
+	echo -e ${blu}"   ******************************************* "${txtrst}; 
+	echo -e "";
+	echo -e "";
+	echo -e "";
+	echo -e "";   
