@@ -69,30 +69,6 @@ enum {
 	ADC_MAX_NUM,
 };
 
-static float sc8551_adc_lsb[] = {
-	[ADC_IBUS]	= SC8551_IBUS_ADC_LSB,
-	[ADC_VBUS]	= SC8551_VBUS_ADC_LSB,
-	[ADC_VAC]	= SC8551_VAC_ADC_LSB,
-	[ADC_VOUT]	= SC8551_VOUT_ADC_LSB,
-	[ADC_VBAT]	= SC8551_VBAT_ADC_LSB,
-	[ADC_IBAT]	= SC8551_IBAT_ADC_LSB,
-	[ADC_TBUS]	= SC8551_TSBUS_ADC_LSB,
-	[ADC_TBAT]	= SC8551_TSBAT_ADC_LSB,
-	[ADC_TDIE]	= SC8551_TDIE_ADC_LSB,
-};
-
-static float sc8551_adc_lsb_non_calibrate[] = {
-	[ADC_IBUS]	= SC8551_IBUS_ADC_LSB,
-	[ADC_VBUS]	= SC8551_VBUS_ADC_LSB,
-	[ADC_VAC]	= SC8551_VAC_ADC_LSB,
-	[ADC_VOUT]	= SC8551_VOUT_ADC_LSB,
-	[ADC_VBAT]	= SC8551_VBAT_ADC_LSB_NON_CALIBRATE,
-	[ADC_IBAT]	= SC8551_IBAT_ADC_LSB,
-	[ADC_TBUS]	= SC8551_TSBUS_ADC_LSB,
-	[ADC_TBAT]	= SC8551_TSBAT_ADC_LSB,
-	[ADC_TDIE]	= SC8551_TDIE_ADC_LSB,
-};
-
 #define BQ25970_ROLE_STDALONE   0
 #define BQ25970_ROLE_SLAVE	1
 #define BQ25970_ROLE_MASTER	2
@@ -180,10 +156,24 @@ do {											\
 } while (0);
 
 #define bq_info(fmt, ...)								\
-do {} while (0);
+do {											\
+	if (bq->mode == BQ25970_ROLE_MASTER)						\
+		printk(KERN_INFO "[bq2597x-MASTER]:%s:" fmt, __func__, ##__VA_ARGS__);	\
+	else if (bq->mode == BQ25970_ROLE_SLAVE)					\
+		printk(KERN_INFO "[bq2597x-SLAVE]:%s:" fmt, __func__, ##__VA_ARGS__);	\
+	else										\
+		printk(KERN_INFO "[bq2597x-STANDALONE]:%s:" fmt, __func__, ##__VA_ARGS__);\
+} while (0);
 
 #define bq_dbg(fmt, ...)								\
-do {} while (0);
+do {											\
+	if (bq->mode == BQ25970_ROLE_MASTER)						\
+		printk(KERN_DEBUG "[bq2597x-MASTER]:%s:" fmt, __func__, ##__VA_ARGS__);	\
+	else if (bq->mode == BQ25970_ROLE_SLAVE)					\
+		printk(KERN_DEBUG "[bq2597x-SLAVE]:%s:" fmt, __func__, ##__VA_ARGS__);	\
+	else										\
+		printk(KERN_DEBUG "[bq2597x-STANDALONE]:%s:" fmt, __func__, ##__VA_ARGS__);\
+} while (0);
 
 enum hvdcp3_type {
 	HVDCP3_NONE = 0,
@@ -1097,16 +1087,6 @@ static int bq2597x_get_adc_data(struct bq2597x *bq, int channel,  int *result)
 	t <<= 8;
 	t |= (val >> 8) & 0xFF;
 	*result = t;
-
-	if (bq->chip_vendor == SC8551) {
-		kernel_neon_begin();
-		if (bq->mass_production)
-			*result = (int)(t * sc8551_adc_lsb_non_calibrate[channel]);
-		else
-			*result = (int)(t * sc8551_adc_lsb[channel]);
-		kernel_neon_end();
-	}
-
 	return 0;
 }
 EXPORT_SYMBOL_GPL(bq2597x_get_adc_data);
