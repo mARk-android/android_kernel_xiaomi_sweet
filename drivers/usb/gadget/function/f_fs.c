@@ -1694,7 +1694,6 @@ ffs_fs_mount(struct file_system_type *t, int flags,
 	rv = mount_nodev(t, flags, &data, ffs_sb_fill);
 	if (IS_ERR(rv) && data.ffs_data)
 		ffs_data_put(data.ffs_data);
-
 	return rv;
 }
 
@@ -2067,10 +2066,10 @@ static void ffs_epfiles_destroy(struct ffs_epfile *epfiles, unsigned count)
 
 static void ffs_func_eps_disable(struct ffs_function *func)
 {
-	struct ffs_ep *ep;
-	struct ffs_data *ffs;  // patch usb: f_fs: Fix use-after-free for epfile v4.14.267
-	struct ffs_epfile *epfile;
-	unsigned short count;
+	struct ffs_ep *ep         = func->eps;
+	struct ffs_data *ffs      = func->ffs;
+	struct ffs_epfile *epfile = func->ffs->epfiles;
+	unsigned count            = func->ffs->eps_count;
 	unsigned long flags;
 
 	ffs_log("enter: state %d setup_state %d flag %lu", func->ffs->state,
@@ -2079,7 +2078,6 @@ static void ffs_func_eps_disable(struct ffs_function *func)
 	spin_lock_irqsave(&func->ffs->eps_lock, flags);
 	count = func->ffs->eps_count;
 	epfile = func->ffs->epfiles;
-	ffs = func->ffs;
 	ep = func->eps;
 	while (count--) {
 		/* pending requests get nuked */
