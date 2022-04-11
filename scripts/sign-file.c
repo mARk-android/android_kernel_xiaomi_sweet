@@ -27,7 +27,13 @@
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
-#include <openssl/engine.h>
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+ #include <openssl/engine.h>
+#endif
+#if OPENSSL_VERSION_NUMBER < 0x30200000L
+ #include <openssl/engine_old.h>
+#endif
 
 /*
  * Use CMS if we have openssl-1.0.0 or newer available - otherwise we have to
@@ -86,7 +92,7 @@ static void display_openssl_errors(int l)
 		return;
 	fprintf(stderr, "At main.c:%d:\n", l);
 
-	while ((e = ERR_get_error_line(&file, &line))) {
+	while ((e = ERR_peek_error_line(&file, &line))) {
 		ERR_error_string(e, buf);
 		fprintf(stderr, "- SSL %s: %s:%d\n", buf, file, line);
 	}
@@ -99,7 +105,7 @@ static void drain_openssl_errors(void)
 
 	if (ERR_peek_error() == 0)
 		return;
-	while (ERR_get_error_line(&file, &line)) {}
+	while (ERR_peek_error_line(&file, &line)) {}
 }
 
 #define ERR(cond, fmt, ...)				\
