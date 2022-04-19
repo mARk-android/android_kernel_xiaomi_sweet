@@ -208,7 +208,6 @@ static void sugov_update_commit(struct sugov_policy *sg_policy, u64 time,
 				unsigned int next_freq)
 {
 	struct cpufreq_policy *policy = sg_policy->policy;
-	unsigned int cpu;
 
 	if (sg_policy->next_freq == next_freq)
 		return;
@@ -223,15 +222,11 @@ static void sugov_update_commit(struct sugov_policy *sg_policy, u64 time,
 	sg_policy->last_freq_update_time = time;
 
 	if (policy->fast_switch_enabled) {
-		sugov_track_cycles(sg_policy, sg_policy->policy->cur, time);
 		next_freq = cpufreq_driver_fast_switch(policy, next_freq);
 		if (!next_freq)
 			return;
 
 		policy->cur = next_freq;
-		for_each_cpu(cpu, policy->cpus) {
-			trace_cpu_frequency(next_freq, cpu);
-		}
 	} else {
 		if (use_pelt())
 			sg_policy->work_in_progress = true;
@@ -270,7 +265,6 @@ static unsigned int get_next_freq(struct sugov_policy *sg_policy,
 				policy->cpuinfo.max_freq : policy->cur;
 
 	freq = (freq + (freq >> 2)) * util / max;
-	trace_sugov_next_freq(policy->cpu, util, max, freq);
 
 	if (freq == sg_policy->cached_raw_freq && !sg_policy->need_freq_update)
 		return sg_policy->next_freq;
@@ -888,10 +882,20 @@ static int sugov_init(struct cpufreq_policy *policy)
 		goto stop_kthread;
 	}
 
-	tunables->up_rate_limit_us =
-				cpufreq_policy_transition_delay_us(policy);
-	tunables->down_rate_limit_us =
-				cpufreq_policy_transition_delay_us(policy);
+	if (cpumask_test_cpu(policy->cpu, cpu_perf_mask)) {
+		tunables->up_rate_limit_us =
+					CONFIG_SCHEDUTIL_UP_RATE_LIMIT_BIG;
+		tunables->down_rate_limit_us =
+					CONFIG_SCHEDUTIL_DOWN_RATE_LIMIT_BIG;
+	}
+
+	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask)) {
+		tunables->up_rate_limit_us =
+					CONFIG_SCHEDUTIL_UP_RATE_LIMIT_LITTLE;
+		tunables->down_rate_limit_us =
+					CONFIG_SCHEDUTIL_DOWN_RATE_LIMIT_LITTLE;
+	}
+
 	tunables->hispeed_load = DEFAULT_HISPEED_LOAD;
 	tunables->hispeed_freq = 0;
 
