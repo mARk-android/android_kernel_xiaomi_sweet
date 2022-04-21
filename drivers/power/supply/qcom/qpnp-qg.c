@@ -47,7 +47,7 @@ static int default_rate_seq[2] = {0, 30};
 static bool is_batt_vendor_swd;
 static bool is_batt_vendor_nvt;
 
-static int qg_debug_mask = QG_DEBUG_PON | QG_DEBUG_PROFILE | QG_DEBUG_SOC | QG_DEBUG_STATUS;
+static int qg_debug_mask;
 module_param_named(
 	debug_mask, qg_debug_mask, int, 0600
 );
