@@ -11,7 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-#define DEBUG
+//#define DEBUG
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/platform_device.h>
@@ -2959,12 +2959,12 @@ static int wcd937x_probe(struct platform_device *pdev)
 	struct component_match *match = NULL;
 	int ret;
 
-	pr_info("%s() enter\n", __func__);
+	//pr_info("%s() enter\n", __func__);
 	ret = wcd937x_add_slave_components(&pdev->dev, &match);
-	if (ret) {
-		pr_info("%s() exit with %d\n", __func__, ret);
+	if (ret) //{
+	//	pr_info("%s() exit with %d\n", __func__, ret);
 		return ret;
-	}
+	//}
 
 	return component_master_add_with_match(&pdev->dev,
 					&wcd937x_comp_ops, match);
