@@ -42,23 +42,23 @@
 TOOLCHAINDIR=clang15_20220402f
 PRODUCT=sweet
 ANDROID=MiuiR
+CONFIG=sweet_user_defconfig
 
 HEADER="K E R N E L • S W E E T • S W E E T I N"
 
 echo build_vers >> build_vers
-TIME=$(date +%Y%m%d-%H%M)
 KERNELVERSION=$(grep VERSION Makefile | head -n1 | awk '{print $3}').$(grep PATCHLEVEL Makefile | head -n1 | awk '{print $3}').$(grep SUBLEVEL Makefile | head -n1 | awk '{print $3}');
 COMMIT=$(git log --oneline -1 | awk '{print $1}' | cut -c 1-8)
-COUNTER=$( cat -n build_vers | tail -1 | awk '{print $1}')
-CONFIG=vendor/sweet_defconfig
+COUNTER=$(cat -n build_vers | tail -1 | awk '{print $1}')
 KERNEL_DIR=$(pwd)
 PARENT_DIR="$(dirname "$KERNEL_DIR")"
 STRIP="aarch64-linux-gnu-strip"
+TIME=$(date +%Y%m%d-%H%M)
 
 export KBUILD_BUILD_USER="mARk"
 export KBUILD_BUILD_HOST="linux"
 
-export KBUILD_BUILD_TIMESTAMP=$TIME
+export KBUILD_BUILD_TIMESTAMP="$(date -R | awk '{print $3}') $(date -R | awk '{print $2}') $(date -R | awk '{print $4}') $(date -R | awk '{print $5}')"
 export PATH="$HOME/toolchain/$TOOLCHAINDIR/bin:$PATH"
 export LD_LIBRARY_PATH="$HOME/toolchain/$TOOLCHAINDIR/lib:$LD_LIBRARY_PATH"
 export KBUILD_COMPILER_STRING="$($HOME/toolchain/$TOOLCHAINDIR/bin/clang --version | head -n 1 | perl -pe 's/\((?:http|git).*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//' -e 's/^.*clang/clang/')"
@@ -82,6 +82,7 @@ export out=out
     echo  ${txtbld}${ppl}"   Builds:       "${txtrst}#$COUNTER;
     echo -e ' ';
     echo  ${txtbld}${grn}"   Platform:     "${txtrst}$(lsb_release -d | cut -c 14-70 ) $(uname -srm);
+    echo                 "                 "RAM free: $(free -m | awk 'NR==2 {print $2-$3}')MB
     echo  ${txtbld}${grn}"   Toolchain:    "${txtrst}$(clang --version | head -n 1)
     echo  ${txtbld}${grn}"   Linker:       "${txtrst}$(gcc --version | head -n 1)
     echo  ${txtbld}${grn}"                 "${txtrst}$(ld.lld --version | head -n 1)
@@ -113,9 +114,9 @@ start_build () {
 
     if [ -f "$out/arch/arm64/boot/Image.gz" ] && [ -f "$out/arch/arm64/boot/dtbo.img" ] && [ -f "$out/arch/arm64/boot/dts/qcom/sdmmagpie.dtb" ]; then
 
-	    echo -e ${bldcya}"\nKernel compiled succesfully! \n    Zipping and packing modules... \n"${txtrst};
+	    echo -e ${bldcya}"\nKernel compiled succesfully!\n    Zipping and packing modules...\n"${txtrst};
 
-	    ZIPNAME="boot•mARkOS•$KERNELVERSION•$ANDROID•$PRODUCT-$TIME.zip"
+	    ZIPNAME="boot.mARkOS.$KERNELVERSION.$ANDROID.$PRODUCT-$TIME.zip"
 
     if [ ! -d AnyKernel3 ]; then
 	    git clone -q https://github.com/mark-android/AnyKernel3.git
@@ -124,6 +125,8 @@ start_build () {
     cp -f $out/arch/arm64/boot/Image.gz AnyKernel3/zImage
     cp -f $out/arch/arm64/boot/dtbo.img AnyKernel3
     cp -f $out/arch/arm64/boot/dts/qcom/sdmmagpie.dtb AnyKernel3/dtb
+    
+    find  -type f -name "*.ko" -exec cp {} AnyKernel3/modules/vendor/lib/modules/ \; -print
 
     python3 avbtool.py add_hash_footer --image AnyKernel3/dtbo.img --partition_size=33554432 --partition_name dtbo
 
