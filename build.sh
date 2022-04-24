@@ -47,8 +47,8 @@ CONFIG=sweet_user_defconfig
 HEADER="K E R N E L • S W E E T • S W E E T I N"
 
 echo build_vers >> build_vers
-KERNELVERSION=$(grep VERSION Makefile | head -n1 | awk '{print $3}').$(grep PATCHLEVEL Makefile | head -n1 | awk '{print $3}').$(grep SUBLEVEL Makefile | head -n1 | awk '{print $3}');
-COMMIT=$(git log --oneline -1 | awk '{print $1}' | cut -c 1-8)
+TAG=$(grep VERSION Makefile | head -n1 | awk '{print $3}').$(grep PATCHLEVEL Makefile | head -n1 | awk '{print $3}').$(grep SUBLEVEL Makefile | head -n1 | awk '{print $3}');
+COMMIT=$(git rev-parse --verify --short=8 HEAD)
 COUNTER=$(cat -n build_vers | tail -1 | awk '{print $1}')
 KERNEL_DIR=$(pwd)
 PARENT_DIR="$(dirname "$KERNEL_DIR")"
@@ -58,7 +58,7 @@ TIME=$(date +%Y%m%d-%H%M)
 export KBUILD_BUILD_USER="mARk"
 export KBUILD_BUILD_HOST="linux"
 
-export KBUILD_BUILD_TIMESTAMP="$(date -R | awk '{print $3}') $(date -R | awk '{print $2}') $(date -R | awk '{print $4}') $(date -R | awk '{print $5}')"
+export KBUILD_BUILD_TIMESTAMP="$(date -R | awk '{print $3}') $(date -R | awk '{print $2}') $(date -R | awk '{print $4}') $(date -R | awk '{print $5}') #$COUNTER"
 export PATH="$HOME/toolchain/$TOOLCHAINDIR/bin:$PATH"
 export LD_LIBRARY_PATH="$HOME/toolchain/$TOOLCHAINDIR/lib:$LD_LIBRARY_PATH"
 export KBUILD_COMPILER_STRING="$($HOME/toolchain/$TOOLCHAINDIR/bin/clang --version | head -n 1 | perl -pe 's/\((?:http|git).*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//' -e 's/^.*clang/clang/')"
@@ -66,19 +66,24 @@ export CC_STRING="$($KBUILD_COMPILER_STRING --version | head -n 1  | perl -pe 's
 export out=out
 
 # make simply gitlog incl package
-    git log --pretty=format:"  %s" |  awk 'NR == 1, NR == 400 { print $0 }' | cut -c 1-60 > AnyKernel3/changelog.tmp
-    sed  -i '1i\=============================================='                             AnyKernel3/changelog.tmp
-    sed  -i "1i\Date: ${TIME}                 #${COUNTER}"                                  AnyKernel3/changelog.tmp
-    sed  -i "1i\mARkOS android ${ANDROID} kernel-${KERNELVERSION} "                         AnyKernel3/changelog.tmp
-    sed  -i '1i\============================================='                              AnyKernel3/changelog.tmp
-    sed -n -e '/^======/,/Linux 4.14./p' AnyKernel3/changelog.tmp | more | head -n -1  > AnyKernel3/changelog
-    rm AnyKernel3/changelog.tmp
-
+TMPLOG=AnyKernel3/changelog.tmp
+TMPLOGS=AnyKernel3/changelog.tmp1
+    echo -e "\nGenerate changelog!";
+    echo -e ${blink}"Please wait!\n"${txtrst};
+    git log --pretty=format:"  %s" |  awk 'NR == 1, NR == 400 { print $0 }' | cut -c 1-54 > $TMPLOG;
+    sed  -i '1i\=============================================='                             $TMPLOG;
+    sed  -i "1i\Date: ${TIME}                 #${COUNTER}"                                  $TMPLOG;
+    sed  -i "1i\mARkOS android ${ANDROID} kernel-${TAG} "                                   $TMPLOG;
+    sed  -i '1i\============================================='                              $TMPLOG;
+    sed -n -e '/^======/,/Linux 4.14./p' $TMPLOG | more | head -n -1  > $TMPLOGS;
+    sed -n -e '/^======/,/v4.14.2/p' $TMPLOGS | more | head -n -1 > AnyKernel3/changelog
+    rm AnyKernel3/changelog.*
+    clear
 # host info view in header
     echo -e ' \n ';
     echo -e ${red}"   ${HEADER}   "${txtrst};  
     echo -e ${bldcya}'  =================================================='${txtrst};
-    echo  ${txtbld}${ylw}"   Target:       "${txtrst}$PRODUCT-$ANDROID-v$KERNELVERSION-$COMMIT;
+    echo  ${txtbld}${ylw}"   Target:       "${txtrst}boot.$KBUILD_BUILD_USER.$TAG.$ANDROID.$PRODUCT-$COMMIT;
     echo  ${txtbld}${ppl}"   Builds:       "${txtrst}#$COUNTER;
     echo -e ' ';
     echo  ${txtbld}${grn}"   Platform:     "${txtrst}$(lsb_release -d | cut -c 14-70 ) $(uname -srm);
@@ -116,7 +121,7 @@ start_build () {
 
 	    echo -e ${bldcya}"\nKernel compiled succesfully!\n    Zipping and packing modules...\n"${txtrst};
 
-	    ZIPNAME="boot.mARkOS.$KERNELVERSION.$ANDROID.$PRODUCT-$TIME.zip"
+	    ZIPNAME="boot.mARkOS.$TAG.$ANDROID.$PRODUCT-$TIME.zip"
 
     if [ ! -d AnyKernel3 ]; then
 	    git clone -q https://github.com/mark-android/AnyKernel3.git
@@ -126,7 +131,7 @@ start_build () {
     cp -f $out/arch/arm64/boot/dtbo.img AnyKernel3
     cp -f $out/arch/arm64/boot/dts/qcom/sdmmagpie.dtb AnyKernel3/dtb
     
-    find  -type f -name "*.ko" -exec cp {} AnyKernel3/modules/vendor/lib/modules/ \; -print
+    #find  -type f -name "*.ko" -exec cp {} AnyKernel3/modules/vendor/lib/modules/ \; -print
 
     python3 avbtool.py add_hash_footer --image AnyKernel3/dtbo.img --partition_size=33554432 --partition_name dtbo
 
@@ -142,7 +147,7 @@ start_build () {
         rm AnyKernel3/dtbo.img
 
     echo -e ${bldgrn}"\nZipping succesfully! \n"${txtrst};
-    echo -e "\nCompleted in $((SECONDS / 60)) minute(s) and $((SECONDS % 60)) second(s) !"
+    echo -e "\nBuild #$COUNTER completed in $((SECONDS / 60)) minute(s) and $((SECONDS % 60)) second(s) !"
     echo -e ${bldylw}"Zip: $ZIPNAME" ${txtrst};
     echo -e "";
     echo -e "";
