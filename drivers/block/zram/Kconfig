@@ -58,7 +58,8 @@ config ZRAM_DEFAULT_COMP_ALGORITHM
 	string "Default ZRAM compression algorithm"
 	default "lz4"
 
-config ZRAM_SIZE_OVERRIDE
-	int "zram size to set from kernel"
-	range 1 8
-	default 3
+config HARDCODE_ZRAM_SIZE
+	bool "Hardcode zram size set from kernel"
+	default n
+	help
+	 Enable hardcoded virtual block device size 3GB called /dev/zramX

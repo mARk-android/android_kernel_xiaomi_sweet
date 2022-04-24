@@ -1829,13 +1829,24 @@ static ssize_t disksize_store(struct device *dev,
 	struct zram *zram = dev_to_zram(dev);
 	int err;
 
-#ifndef CONFIG_ZRAM_SIZE_OVERRIDE
-	disksize = memparse(buf, NULL);
-	if (!disksize)
+#ifndef CONFIG_HARDCODE_ZRAM_SIZE
+	/* Update ZRAM size from init_ post_boot.sh */
+		disksize = memparse(buf, NULL);
+		if (!disksize)
 		return -EINVAL;
+		pr_info("Updated zram size to %liMB", (disksize/1048576));
 #else
-	disksize = (u64)SZ_1G * CONFIG_ZRAM_SIZE_OVERRIDE;
-	pr_info("Overriding zram size to %li", disksize);
+	/* Hardcoded smaller ZRAM size for low-memory machines (less than 4GB)*/
+	unsigned long megs = totalram_pages >> (20 - PAGE_SHIFT);
+
+	if (megs < 5)
+		disksize = (u64)SZ_1G * 2;
+	else
+		disksize = (u64)SZ_1G * 3;
+
+		if (!disksize)
+		return -EINVAL;
+		pr_info("Default size zram overrided to %liMB", (disksize/1048576));
 #endif
 
 	down_write(&zram->init_lock);
