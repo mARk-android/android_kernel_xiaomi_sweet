@@ -67,6 +67,11 @@
 		mi,mdss-dsi-doze-hbm-brightness-value = <272>;
 		mi,mdss-dsi-doze-lbm-brightness-value = <22>;
 		qcom,mdss-dsi-oled-panel-video-mode;
+		
+		/* Enable ULPS feature, power saving flags */ 
+		qcom,ulps-enabled;
+		qcom,suspend-ulps-enabled;
+		qcom,panel-allow-phy-poweroff;
 
 		qcom,mdss-dsi-display-timings {
 			timing@0{
