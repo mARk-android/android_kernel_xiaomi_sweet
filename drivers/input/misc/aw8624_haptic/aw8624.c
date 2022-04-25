@@ -34,6 +34,13 @@
 #include "aw8624_reg.h"
 #include "aw8624.h"
 
+
+// Force disable the spammy logging
+#undef pr_err
+#define pr_err pr_debug
+#undef printk
+#define printk pr_debug
+
 /******************************************************
  *
  * Marco
