@@ -35,11 +35,14 @@
 #include "aw8624.h"
 
 
-// Force disable the spammy logging
+/* Force disable the debugging and logging in non-debug config */
+#if (IS_ENABLED(CONFIG_DEBUG_INFO)) || (IS_ENABLED(CONFIG_DEBUG_FS)) ||  (IS_ENABLED(CONFIG_DYNAMIC_DEBUG))  || (IS_ENABLED(CONFIG_DEBUG_LIST))
+#undef pr_debug
+#define pr_debug printk
+#else
 #undef pr_err
 #define pr_err pr_debug
-#undef printk
-#define printk pr_debug
+#endif
 
 /******************************************************
  *
@@ -1034,7 +1037,7 @@ static int aw8624_rtp_trim_lra_calibration(struct aw8624 *aw8624)
 	if (fre_val == 1 || fre_val == 0)
 		theory_time = (aw8624->rtp_len / 48000) * 1000000;	/*48K */
 
-	printk("microsecond:%ld  theory_time = %d\n", aw8624->microsecond,
+	pr_debug("microsecond:%ld  theory_time = %d\n", aw8624->microsecond,
 	       theory_time);
 
 	lra_rtim_code =
@@ -1583,7 +1586,7 @@ static int aw8624_haptic_f0_calibration(struct aw8624 *aw8624)
 			}
 		}
 		if (aw8624->chipid_flag == 1) {
-			printk("%s  %d aw8624->chipid_flag = 1 \n", __func__,
+			pr_debug("%s  %d aw8624->chipid_flag = 1 \n", __func__,
 			       __LINE__);
 			if (f0_cali_step > 31)
 				f0_cali_lra = (char)f0_cali_step - 32;
@@ -2183,7 +2186,7 @@ static int aw8624_parse_dt(struct device *dev, struct aw8624 *aw8624,
 	//    of_property_read_u32_array(np, "vib_trig_config", trig_config,
 	//                             ARRAY_SIZE(trig_config));
 	//if (val != 0)
-	//      printk("%s vib_trig_config not found\n", __func__);
+	//      pr_debug("%s vib_trig_config not found\n", __func__);
 	//memcpy(aw8624->info.trig_config, trig_config, sizeof(trig_config));
 
 	val =
@@ -2237,27 +2240,27 @@ static int aw8624_parse_dt(struct device *dev, struct aw8624 *aw8624,
 		rc = of_property_read_u32(child_node, "qcom,effect-id",
 					  &effect->id);
 		if (rc != 0) {
-			printk("%s: Read qcom,effect-id failed\n", __func__);
+			pr_debug("%s: Read qcom,effect-id failed\n", __func__);
 		}
-		printk("%s: effect_id: %d\n", __func__, effect->id);
+		pr_debug("%s: effect_id: %d\n", __func__, effect->id);
 
 		effect->vmax_mv = config->vmax_mv;
 		rc = of_property_read_u32(child_node, "qcom,wf-vmax-mv", &tmp);
 		if (rc != 0)
-			printk("%s:  Read qcom,wf-vmax-mv failed !\n", __func__);
+			pr_debug("%s:  Read qcom,wf-vmax-mv failed !\n", __func__);
 		else
 			effect->vmax_mv = tmp;
 
-		printk("%s: ---%d effect->vmax_mv =%d \n", __func__, __LINE__,
+		pr_debug("%s: ---%d effect->vmax_mv =%d \n", __func__, __LINE__,
 		       effect->vmax_mv);
 		rc = of_property_count_elems_of_size(child_node,
 						     "qcom,wf-pattern",
 						     sizeof(u8));
 		if (rc < 0) {
-			printk("%s: Count qcom,wf-pattern property failed !\n",
+			pr_debug("%s: Count qcom,wf-pattern property failed !\n",
 			       __func__);
 		} else if (rc == 0) {
-			printk("%s: qcom,wf-pattern has no data\n", __func__);
+			pr_debug("%s: qcom,wf-pattern has no data\n", __func__);
 		}
 
 		effect->pattern_length = rc;
@@ -2269,10 +2272,10 @@ static int aw8624_parse_dt(struct device *dev, struct aw8624 *aw8624,
 					       effect->pattern,
 					       effect->pattern_length);
 		if (rc < 0) {
-			printk("%s: Read qcom,wf-pattern property failed !\n",
+			pr_debug("%s: Read qcom,wf-pattern property failed !\n",
 			       __func__);
 		}
-		printk
+		pr_debug
 		    ("%s: %d  effect->pattern_length=%d  effect->pattern=%d \n",
 		     __func__, __LINE__, effect->pattern_length,
 		     (uintptr_t)effect->pattern);
@@ -2281,17 +2284,17 @@ static int aw8624_parse_dt(struct device *dev, struct aw8624 *aw8624,
 		rc = of_property_read_u32(child_node, "qcom,wf-play-rate-us",
 					  &tmp);
 		if (rc < 0)
-			printk("%s: Read qcom,wf-play-rate-us failed !\n",
+			pr_debug("%s: Read qcom,wf-play-rate-us failed !\n",
 			       __func__);
 		else
 			effect->play_rate_us = tmp;
-		printk("%s: ---%d effect->play_rate_us=%d \n", __func__,
+		pr_debug("%s: ---%d effect->play_rate_us=%d \n", __func__,
 		       __LINE__, effect->play_rate_us);
 
 		rc = of_property_read_u32(child_node, "qcom,wf-repeat-count",
 					  &tmp);
 		if (rc < 0) {
-			printk("%s: Read  qcom,wf-repeat-count failed !\n",
+			pr_debug("%s: Read  qcom,wf-repeat-count failed !\n",
 			       __func__);
 		} else {
 			for (j = 0; j < ARRAY_SIZE(wf_repeat); j++)
@@ -2305,7 +2308,7 @@ static int aw8624_parse_dt(struct device *dev, struct aw8624 *aw8624,
 		rc = of_property_read_u32(child_node, "qcom,wf-s-repeat-count",
 					  &tmp);
 		if (rc < 0) {
-			printk("%s: Read  qcom,wf-s-repeat-count failed !\n",
+			pr_debug("%s: Read  qcom,wf-s-repeat-count failed !\n",
 			       __func__);
 		} else {
 			for (j = 0; j < ARRAY_SIZE(wf_s_repeat); j++)
@@ -2326,7 +2329,7 @@ static int aw8624_parse_dt(struct device *dev, struct aw8624 *aw8624,
 			continue;
 
 		if (tmp > HAP_BRAKE_PATTERN_MAX) {
-			printk
+			pr_debug
 			    ("%s: wf-brake-pattern shouldn't be more than %d bytes\n",
 			     __func__, HAP_BRAKE_PATTERN_MAX);
 		}
@@ -2335,7 +2338,7 @@ static int aw8624_parse_dt(struct device *dev, struct aw8624 *aw8624,
 					       "qcom,wf-brake-pattern",
 					       effect->brake, tmp);
 		if (rc < 0) {
-			printk("%s: Failed to get wf-brake-pattern !\n",
+			pr_debug("%s: Failed to get wf-brake-pattern !\n",
 			       __func__);
 		}
 
@@ -2343,48 +2346,48 @@ static int aw8624_parse_dt(struct device *dev, struct aw8624 *aw8624,
 	}
 
 	for (j = 0; j < i; j++) {
-		printk("%s:       effect_id: %d\n", __func__,
+		pr_debug("%s:       effect_id: %d\n", __func__,
 		       aw8624->predefined[j].id);
-		printk("%s:       vmax: %d mv\n", __func__,
+		pr_debug("%s:       vmax: %d mv\n", __func__,
 		       aw8624->predefined[j].vmax_mv);
-		printk("%s:        play_rate: %d us\n", __func__,
+		pr_debug("%s:        play_rate: %d us\n", __func__,
 		       aw8624->predefined[j].play_rate_us);
 		for (m = 0; m < aw8624->predefined[j].pattern_length; m++)
-			printk("%s:     pattern[%d]: 0x%x\n", __func__, m,
+			pr_debug("%s:     pattern[%d]: 0x%x\n", __func__, m,
 			       aw8624->predefined[j].pattern[m]);
 		for (m = 0; m < aw8624->predefined[j].brake_pattern_length; m++)
-			printk("%s:     brake_pattern[%d]: 0x%x\n", __func__, m,
+			pr_debug("%s:     brake_pattern[%d]: 0x%x\n", __func__, m,
 			       aw8624->predefined[j].brake[m]);
-		printk("%s:         brake_en: %d\n", __func__,
+		pr_debug("%s:         brake_en: %d\n", __func__,
 		       aw8624->predefined[j].brake_en);
-		printk("%s:        wf_repeat_n: %d\n", __func__,
+		pr_debug("%s:        wf_repeat_n: %d\n", __func__,
 		       aw8624->predefined[j].wf_repeat_n);
-		printk("%s:         wf_s_repeat_n: %d\n", __func__,
+		pr_debug("%s:         wf_s_repeat_n: %d\n", __func__,
 		       aw8624->predefined[j].wf_s_repeat_n);
-		printk("%s:         lra_auto_res_disable: %d\n", __func__,
+		pr_debug("%s:         lra_auto_res_disable: %d\n", __func__,
 		       aw8624->predefined[j].lra_auto_res_disable);
 	}
-	printk("%s:       aw8624->effects_count: %d\n", __func__,
+	pr_debug("%s:       aw8624->effects_count: %d\n", __func__,
 	       aw8624->effects_count);
-	printk("%s:       aw8624->effect_id_boundary: %d\n", __func__,
+	pr_debug("%s:       aw8624->effect_id_boundary: %d\n", __func__,
 	       aw8624->info.effect_id_boundary);
-	printk("%s:       aw8624->effect_max: %d\n", __func__,
+	pr_debug("%s:       aw8624->effect_max: %d\n", __func__,
 	       aw8624->info.effect_max);
-	printk("%s:       aw8624->info.cont_drv_lvl: %d\n", __func__,
+	pr_debug("%s:       aw8624->info.cont_drv_lvl: %d\n", __func__,
 	       aw8624->info.cont_drv_lvl);
-	printk("%s:       aw8624->info.cont_drv_lvl_ov: %d\n", __func__,
+	pr_debug("%s:       aw8624->info.cont_drv_lvl_ov: %d\n", __func__,
 	       aw8624->info.cont_drv_lvl_ov);
-	printk("%s:       aw8624->info.gain_flag: %d\n", __func__,
+	pr_debug("%s:       aw8624->info.gain_flag: %d\n", __func__,
 	       aw8624->info.gain_flag);
 	for (i = 0; i < 3; i++)
 		for (j = 0; j < 5; j++)
-			printk
+			pr_debug
 			    ("%s:       aw8624->info.trig_config[%d][%d]: %d\n", __func__,
 			     i, j, aw8624->info.trig_config[i][j]);
 	for (i = 0; i < 175; i++)
-		printk("%s:       aw8624->info.rtp_time[%d]: %d\n", __func__,
+		pr_debug("%s:       aw8624->info.rtp_time[%d]: %d\n", __func__,
 		       i, aw8624->info.rtp_time[i]);
-	printk("%s:       aw8624->info.parameter1: 0x%x\n", __func__,
+	pr_debug("%s:       aw8624->info.parameter1: 0x%x\n", __func__,
 	       aw8624->info.parameter1);
 	return 0;
 }
@@ -2394,7 +2397,7 @@ static inline void get_play_length(struct qti_hap_play_info *play,
 {
 	struct qti_hap_effect *effect = play->effect;
 	int tmp;
-	printk("%s  %d enter\n", __func__, __LINE__);
+	pr_debug("%s  %d enter\n", __func__, __LINE__);
 
 	tmp = effect->pattern_length * effect->play_rate_us;
 	tmp *= wf_s_repeat[effect->wf_s_repeat_n];
@@ -2423,7 +2426,7 @@ static int aw8624_haptics_upload_effect(struct input_dev *dev,
 	if (hrtimer_active(&aw8624->timer)) {
 		rem = hrtimer_get_remaining(&aw8624->timer);
 		time_us = ktime_to_us(rem);
-		printk("waiting for playing clear sequence: %lld us\n",
+		pr_debug("waiting for playing clear sequence: %lld us\n",
 		       time_us);
 		usleep_range(time_us, time_us + 100);
 	}
@@ -2605,7 +2608,7 @@ static ssize_t aw8624_activate_test_store(struct device *dev,
 	aw8624->test_val = val;
 	
 	if (aw8624->test_val == 1) {
-		printk("%s  %d  \n", __func__, __LINE__);
+		pr_debug("%s  %d  \n", __func__, __LINE__);
 		aw8624->duration = 3000;
 
 		aw8624->state = 1;
@@ -2614,7 +2617,7 @@ static ssize_t aw8624_activate_test_store(struct device *dev,
 		queue_work(aw8624->work_queue, &aw8624->vibrator_work);
 	}
 	if (aw8624->test_val == 2) {
-		printk("%s  %d  \n", __func__, __LINE__);
+		pr_debug("%s  %d  \n", __func__, __LINE__);
 		mutex_lock(&aw8624->lock);
 		aw8624_haptic_set_wav_seq(aw8624, 0x00, 0x01);
 		aw8624_haptic_set_wav_seq(aw8624, 0x01, 0x01);
@@ -2699,10 +2702,10 @@ static int aw8624_hw_reset(struct aw8624 *aw8624)
 	if (!aw8624->enable_pin_control) {
 		if (aw8624 && gpio_is_valid(aw8624->reset_gpio)) {
 			gpio_set_value_cansleep(aw8624->reset_gpio, 0);
-			printk("%s pull down1\n", __func__);
+			pr_debug("%s pull down1\n", __func__);
 			msleep(5);
 			gpio_set_value_cansleep(aw8624->reset_gpio, 1);
-			printk("%s pull up1\n", __func__);
+			pr_debug("%s pull up1\n", __func__);
 			msleep(5);
 		} else {
 			dev_err(aw8624->dev, "%s:  failed\n", __func__);
@@ -3188,7 +3191,7 @@ static ssize_t aw8624_cali_store(struct device *dev,
 	unsigned int val = 0;
 	int rc = 0;
 
-	printk("%s %d \n", __func__, __LINE__);
+	pr_debug("%s %d \n", __func__, __LINE__);
 
 	rc = kstrtouint(buf, 0, &val);
 	if (rc < 0)
@@ -3768,11 +3771,11 @@ aw8624_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 	aw8624->aw8624_pinctrl = devm_pinctrl_get(&i2c->dev);
 	if (IS_ERR(aw8624->aw8624_pinctrl)) {
 		if (PTR_ERR(aw8624->aw8624_pinctrl) == -EPROBE_DEFER) {
-			printk("pinctrl not ready\n");
+			pr_debug("pinctrl not ready\n");
 			rc = -EPROBE_DEFER;
 			return rc;
 		}
-		printk("Target does not use pinctrl\n");
+		pr_debug("Target does not use pinctrl\n");
 		aw8624->aw8624_pinctrl = NULL;
 		rc = -EINVAL;
 		return rc;
@@ -3782,7 +3785,7 @@ aw8624_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 		struct pinctrl_state *state =
 		    pinctrl_lookup_state(aw8624->aw8624_pinctrl, n);
 		if (IS_ERR(state)) {
-			printk("cannot find '%s'\n", n);
+			pr_debug("cannot find '%s'\n", n);
 			rc = -EINVAL;
 		}
 		aw8624->pinctrl_state[i] = state;
