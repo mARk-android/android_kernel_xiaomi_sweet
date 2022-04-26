@@ -47,6 +47,10 @@
 
 #include "exposure_adjustment.h"
 
+/* Disable info logging */
+#undef pr_info
+#define pr_info pr_debug
+
 /**
  * topology is currently defined by a set of following 3 values:
  * 1. num of layer mixers
