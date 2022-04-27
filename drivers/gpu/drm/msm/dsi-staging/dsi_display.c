@@ -107,7 +107,7 @@ void dsi_display_panel_gamma_mode_change(struct dsi_display *display,
 	if (rc)
 		pr_err("%s: send cmds failed...", __func__);
 	else
-		pr_info("%s: refresh_rate[%d]\n", __func__, adj_mode->timing.refresh_rate);
+		pr_debug("%s: refresh_rate[%d]\n", __func__, adj_mode->timing.refresh_rate);
 
 	return;
 }
@@ -7065,9 +7065,9 @@ int dsi_display_set_mode(struct dsi_display *display,
 		}
 	}
 
-	pr_info("mdp_transfer_time_us=%d us\n",
+	pr_debug("mdp_transfer_time_us=%d us\n",
 			adj_mode.priv_info->mdp_transfer_time_us);
-	pr_info("hactive= %d,vactive= %d,fps=%d\n",
+	pr_debug("hactive= %d,vactive= %d,fps=%d\n",
 			timing.h_active, timing.v_active,
 			timing.refresh_rate);
 

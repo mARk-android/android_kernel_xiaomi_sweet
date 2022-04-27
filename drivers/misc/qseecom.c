@@ -115,6 +115,11 @@
 #define FDE_FLAG_POS    4
 #define ENABLE_KEY_WRAP_IN_KS    (1 << FDE_FLAG_POS)
 
+#ifndef CONFIG_DEBUG_INFO
+#undef pr_err
+#define pr_err pr_debug
+#endif
+
 enum qseecom_clk_definitions {
 	CLK_DFAB = 0,
 	CLK_SFPB,

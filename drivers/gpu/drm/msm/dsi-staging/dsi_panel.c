@@ -3862,7 +3862,7 @@ static void nolp_backlight_delayed_work(struct work_struct *work)
 	if (panel->last_bl_lvl != 0) {
 		if (panel->dc_enable && panel->last_bl_lvl < panel->dc_threshold)
 			dsi_panel_set_backlight(panel, panel->last_bl_lvl);
-		pr_info("%s: set brightness = %d\n", __func__, panel->last_bl_lvl);
+		pr_debug("%s: set brightness = %d\n", __func__, panel->last_bl_lvl);
 	}
 }
 
