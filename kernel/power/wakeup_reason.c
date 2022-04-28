@@ -248,7 +248,7 @@ void clear_wakeup_reasons(void)
 
 	spin_unlock_irqrestore(&wakeup_reason_lock, flags);
 }
-
+#if 0
 static void print_wakeup_sources(void)
 {
 	struct wakeup_irq_node *n;
@@ -259,23 +259,23 @@ static void print_wakeup_sources(void)
 	capture_reasons = false;
 
 	if (suspend_abort) {
-		pr_info("Abort: %s\n", non_irq_wake_reason);
+		pr_debug("Abort: %s\n", non_irq_wake_reason);
 		spin_unlock_irqrestore(&wakeup_reason_lock, flags);
 		return;
 	}
 
 	if (!list_empty(&leaf_irqs))
 		list_for_each_entry(n, &leaf_irqs, siblings)
-			pr_info("Resume caused by IRQ %d, %s\n", n->irq,
+			pr_debug("Resume caused by IRQ %d, %s\n", n->irq,
 				n->irq_name);
 	else if (abnormal_wake)
-		pr_info("Resume caused by %s\n", non_irq_wake_reason);
+		pr_debug("Resume caused by %s\n", non_irq_wake_reason);
 	else
-		pr_info("Resume cause unknown\n");
+		pr_debug("Resume cause unknown\n");
 
 	spin_unlock_irqrestore(&wakeup_reason_lock, flags);
 }
-
+#endif
 static ssize_t last_resume_reason_show(struct kobject *kobj,
 				       struct kobj_attribute *attr, char *buf)
 {
@@ -366,7 +366,7 @@ static int wakeup_reason_pm_event(struct notifier_block *notifier,
 		curr_monotime = ktime_get();
 		/* monotonic time since boot including the time spent in suspend */
 		curr_stime = ktime_get_boottime();
-		print_wakeup_sources();
+		//print_wakeup_sources();
 		break;
 	default:
 		break;
