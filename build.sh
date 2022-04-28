@@ -14,167 +14,47 @@
 # Licensed under the terms of the GNU GPL License
 # ----------------------------------------------------------------------
 #
-# specify colors utilized in the terminal
-    red=$(tput setaf 1)             #  red
-    grn=$(tput setaf 2)             #  green
-    ylw=$(tput setaf 3)             #  yellow
-    blu=$(tput setaf 4)             #  blue
-    ppl=$(tput setaf 5)             #  purple
-    cya=$(tput setaf 6)             #  cyan
-    txtbld=$(tput bold)             #  Bold
-    bldred=${txtbld}$(tput setaf 1) #  red
-    bldgrn=${txtbld}$(tput setaf 2) #  green
-    bldylw=${txtbld}$(tput setaf 3) #  yellow
-    bldblu=${txtbld}$(tput setaf 4) #  blue
-    bldppl=${txtbld}$(tput setaf 5) #  purple
-    bldcya=${txtbld}$(tput setaf 6) #  cyan
-    txtrst=$(tput sgr0)             #  Reset
-    rev=$(tput rev)                 #  Reverse color
-    pplrev=${rev}$(tput setaf 5)
-    cyarev=${rev}$(tput setaf 6)
-    ylwrev=${rev}$(tput setaf 3)
-    blurev=${rev}$(tput setaf 4)
-    blink=$(tput blink)
-    dim=$(tput dim)
-    clear=$(tput clear)
 
+# import helper function
+. ./tools.sh
+    
 # extra var
-TOOLCHAINDIR=clang15_20220402f
-PRODUCT=sweet
-ANDROID=MiuiR
-CONFIG=sweet_user_defconfig
-
 HEADER="K E R N E L • S W E E T • S W E E T I N"
-
-echo build_vers >> build_vers
-TAG=$(grep VERSION Makefile | head -n1 | awk '{print $3}').$(grep PATCHLEVEL Makefile | head -n1 | awk '{print $3}').$(grep SUBLEVEL Makefile | head -n1 | awk '{print $3}');
-COMMIT=$(git rev-parse --verify --short=8 HEAD)
-COUNTER=$(cat -n build_vers | tail -1 | awk '{print $1}')
-KERNEL_DIR=$(pwd)
-PARENT_DIR="$(dirname "$KERNEL_DIR")"
-STRIP="aarch64-linux-gnu-strip"
-TIME=$(date +%Y%m%d-%H%M)
 
 export KBUILD_BUILD_USER="mARk"
 export KBUILD_BUILD_HOST="linux"
 
-export KBUILD_BUILD_TIMESTAMP="$(date -R | awk '{print $3}') $(date -R | awk '{print $2}') $(date -R | awk '{print $4}') $(date -R | awk '{print $5}') #$COUNTER"
-export PATH="$HOME/toolchain/$TOOLCHAINDIR/bin:$PATH"
-export LD_LIBRARY_PATH="$HOME/toolchain/$TOOLCHAINDIR/lib:$LD_LIBRARY_PATH"
-export KBUILD_COMPILER_STRING="$($HOME/toolchain/$TOOLCHAINDIR/bin/clang --version | head -n 1 | perl -pe 's/\((?:http|git).*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//' -e 's/^.*clang/clang/')"
-export CC_STRING="$($KBUILD_COMPILER_STRING --version | head -n 1  | perl -pe 's/\((?:http|git).*?\)//gs')"
-export out=out
+TC=clang15_20220402f
+PRODUCT=sweet
+ANDROID=MiuiR
+PLATFORM=sdmmagpie
+CONFIG=sweet_user_defconfig
+BLD_DIR=_BUILD_KERNEL
 
-# make simply gitlog incl package
-TMPLOG=AnyKernel3/changelog.tmp
-TMPLOGS=AnyKernel3/changelog.tmp1
-    echo -e "\nGenerate changelog!";
-    echo -e ${blink}"Please wait!\n"${txtrst};
-    git log --pretty=format:"  %s" |  awk 'NR == 1, NR == 400 { print $0 }' | cut -c 1-54 > $TMPLOG;
-    sed  -i '1i\=============================================='                             $TMPLOG;
-    sed  -i "1i\Date: ${TIME}                 #${COUNTER}"                                  $TMPLOG;
-    sed  -i "1i\mARkOS android ${ANDROID} kernel-${TAG} "                                   $TMPLOG;
-    sed  -i '1i\============================================='                              $TMPLOG;
-    sed -n -e '/^======/,/Linux 4.14./p' $TMPLOG | more | head -n -1  > $TMPLOGS;
-    sed -n -e '/^======/,/v4.14.2/p' $TMPLOGS | more | head -n -1 > AnyKernel3/changelog
-    rm AnyKernel3/changelog.*
-    clear
-# host info view in header
-    echo -e ' \n ';
-    echo -e ${red}"   ${HEADER}   "${txtrst};  
-    echo -e ${bldcya}'  =================================================='${txtrst};
-    echo  ${txtbld}${ylw}"   Target:       "${txtrst}boot.$KBUILD_BUILD_USER.$TAG.$ANDROID.$PRODUCT-$COMMIT;
-    echo  ${txtbld}${ppl}"   Builds:       "${txtrst}#$COUNTER;
-    echo -e ' ';
-    echo  ${txtbld}${grn}"   Platform:     "${txtrst}$(lsb_release -d | cut -c 14-70 ) $(uname -srm);
-    echo                 "                 "RAM free: $(free -m | awk 'NR==2 {print $2-$3}')MB
-    echo  ${txtbld}${grn}"   Toolchain:    "${txtrst}$(clang --version | head -n 1)
-    echo  ${txtbld}${grn}"   Linker:       "${txtrst}$(gcc --version | head -n 1)
-    echo  ${txtbld}${grn}"                 "${txtrst}$(ld.lld --version | head -n 1)
-    echo  ${txtbld}${grn}"                 "${txtrst}$(ld --version | head -n 1)
-    echo -e ${bldcya}'  =================================================='${txtrst};
-    echo -e ${dim}"\n"
+# select changelog or gitlog
+LOG=changelog
 
-# functions
-start_build () {
-    make -j$(nproc --all) O=$out \
-                          ARCH=arm64 \
-                          CC="ccache clang" \
-                          AR="llvm-ar" \
-                          NM="llvm-nm" \
-			  LD="ld.lld" \
-			  AS="llvm-as" \
-			  OBJCOPY="llvm-objcopy" \
-			  OBJDUMP="llvm-objdump" \
-			  STRIP="llvm-strip" \
-                          CLANG_TRIPLE=aarch64-linux-gnu- \
-                          CROSS_COMPILE=aarch64-linux-gnu- \
-                          CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+# import variables
+    config_var
 
-}
-
-# build kernel Image.gz dtbo.img
-    make O=$out ARCH=arm64 $CONFIG > /dev/null
+# main script
+    dp_header
+    check_anykernel
+    check_toolchain
+    make_kernel
     start_build
-
-    if [ -f "$out/arch/arm64/boot/Image.gz" ] && [ -f "$out/arch/arm64/boot/dtbo.img" ] && [ -f "$out/arch/arm64/boot/dts/qcom/sdmmagpie.dtb" ]; then
-
-	    echo -e ${bldcya}"\nKernel compiled succesfully!\n    Zipping and packing modules...\n"${txtrst};
-
-	    ZIPNAME="boot.mARkOS.$TAG.$ANDROID.$PRODUCT-$TIME.zip"
-
-    if [ ! -d AnyKernel3 ]; then
-	    git clone -q https://github.com/mark-android/AnyKernel3.git
-    fi;
-
-    cp -f $out/arch/arm64/boot/Image.gz AnyKernel3/zImage
-    cp -f $out/arch/arm64/boot/dtbo.img AnyKernel3
-    cp -f $out/arch/arm64/boot/dts/qcom/sdmmagpie.dtb AnyKernel3/dtb
+    check_build
     
-    #find  -type f -name "*.ko" -exec cp {} AnyKernel3/modules/vendor/lib/modules/ \; -print
+ZIPNAME="boot.mARkOS.$TAG.$ANDROID.$PRODUCT-$TIME.zip"
 
-    python3 avbtool.py add_hash_footer --image AnyKernel3/dtbo.img --partition_size=33554432 --partition_name dtbo
-
-    cd AnyKernel3
-	if [ ! -d $KERNEL_DIR/_BUILD_KERNEL ]; then
-            mkdir $KERNEL_DIR/_BUILD_KERNEL
-	fi;
-
-    zip -r9 "$KERNEL_DIR/_BUILD_KERNEL/$ZIPNAME" *
-    cd ..
-
-        rm AnyKernel3/zImage
-        rm AnyKernel3/dtbo.img
-
-    echo -e ${bldgrn}"\nZipping succesfully! \n"${txtrst};
-    echo -e "\nBuild #$COUNTER completed in $((SECONDS / 60)) minute(s) and $((SECONDS % 60)) second(s) !"
-    echo -e ${bldylw}"Zip: $ZIPNAME" ${txtrst};
-    echo -e "";
-    echo -e "";
-
-# delete output dir
-    rm -rf $out
-
-# footer
-	echo -e "";
-	echo -e "";
-	echo -e ${blu}"                 _    _  _  _     _ _   _ _    "${txtrst};
-	echo -e ${blu}"    _ _ _ _     / \  |  _ \| | _ / _ \/ _ _|   "${txtrst};
-	echo -e ${grn}"   |  _   _ \  / _ \ | |_) | |/ / | | \_ _ \   "${txtrst};
-	echo -e ${ylw}"   | | | | | |/ _,_ \|  _ <|   <| |_| |_ _) |  "${txtrst};
-	echo -e ${red}"   |_| |_| |_/_/   \_\_| \_\_|\_|\_ _/ \_ _/   "${txtrst};
-	echo -e ${red}"         • K E R N E L • S W E E T •           "${txtrst};  
-	echo -e ${blu}"                                               "${txtrst};
-	echo -e ${blu}"                                               "${txtrst};
-	echo -e ${ppl}"            Xiaomi Redmi Note 10 Pro           "${txtrst};
-	echo -e ${ppl}"            by mARk-android@github             "${txtrst};
-	echo -e ${blu}"                                               "${txtrst};
-	echo -e ${blu}"   ******************************************* "${txtrst};
-	echo -e "";
-	echo -e "";
-	echo -e "";
-	echo -e "";
-
+# packing and checking kernel image
+if [ -f $b1 ] && [ -f $b2 ] && [ -f $b3 ]; then
+    sign_dtbo
+    mk_log
+    do_zip
 else
-    echo -e ${bldred}"\nCompilation failed!\n"${txtrst};
+    print_error
 fi;
+
+    do_clean
+    dp_footer
