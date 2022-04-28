@@ -5160,8 +5160,8 @@ static void qg_battery_soc_smooth_tracking(struct qpnp_qg *chip)
 	}
 }
 
-#define MONITOR_SOC_WAIT_MS		1000
-#define MONITOR_SOC_WAIT_PER_MS		10000
+#define MONITOR_SOC_WAIT_MS		5000
+#define MONITOR_SOC_WAIT_PER_MS		50000
 static void soc_monitor_work(struct work_struct *work)
 {
 	int rc, batt_ua;
