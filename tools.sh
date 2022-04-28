@@ -200,14 +200,20 @@ check_log () {
     fi;
 }
 
+prev_lvl () {
+    V=$(grep SUBLEVEL Makefile | head -n1 | awk '{print $3}');
+        R=$(($V-1));
+}
+
 
 do_changelog_header () {
-# make header builtin log
+# make header builtin log and cut to previos kernel merge
+    prev_lvl
     sed  -i '1i\=============================================='              $TMP
     sed  -i "1i\Date: $TIME                 #$COUNTER"                       $TMP
     sed  -i "1i\mARkOS android $ANDROID kernel-$TAG"                         $TMP
     sed  -i '1i\============================================='               $TMP
-    sed -n -e '/^======/,/v4.14./p' $TMP | more | head -n -1 > $A3/changelog
+    sed -n -e "/^======/,/v4.14.${R}/p" $TMP | more | head -n -1 > $A3/changelog
 }
 
 
