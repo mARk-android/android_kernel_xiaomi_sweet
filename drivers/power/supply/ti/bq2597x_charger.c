@@ -152,7 +152,7 @@ do {											\
 	else if (bq->mode == BQ25970_ROLE_SLAVE)					\
 		printk(KERN_ERR "[bq2597x-SLAVE]:%s:" fmt, __func__, ##__VA_ARGS__);	\
 	else										\
-		printk(KERN_ERR "[bq2597x-STANDALONE]:%s:" fmt, __func__, ##__VA_ARGS__);\
+		printk(KERN_ERR "[bq2597x-S]:%s:" fmt, __func__, ##__VA_ARGS__);\
 } while (0);
 
 #define bq_info(fmt, ...)								\
@@ -1630,7 +1630,7 @@ static int bq2597x_parse_dt(struct bq2597x *bq, struct device *dev)
 	bq->vbat_calibrate = 0;
 
 	if (ret) {
-		bq_err("failed to read vbat_calibrate\n");
+		//bq_err("failed to read vbat_calibrate\n");
 		bq->vbat_calibrate = 0;
 	}
 
@@ -2570,7 +2570,7 @@ static int bq2597x_suspend(struct device *dev)
 	mutex_unlock(&bq->irq_complete);
 	bq2597x_enable_adc(bq, false);
 	cancel_delayed_work_sync(&bq->monitor_work);
-	bq_err("Suspend successfully!");
+	//bq_err("Suspend successfully!");
 
 	return 0;
 }
@@ -2605,7 +2605,7 @@ static int bq2597x_resume(struct device *dev)
 
 	bq2597x_enable_adc(bq, true);
 	power_supply_changed(bq->fc2_psy);
-	bq_err("Resume successfully!");
+	//bq_err("Resume successfully!");
 
 	return 0;
 }
