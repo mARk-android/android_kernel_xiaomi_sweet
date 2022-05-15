@@ -30,6 +30,9 @@
 #endif
 #include <linux/jiffies.h>
 
+#undef dev_warn
+#define dev_warn dev_dbg
+
 struct nqx_platform_data {
 	unsigned int irq_gpio;
 	unsigned int en_gpio;
@@ -210,7 +213,7 @@ static ssize_t nfc_read(struct file *filp, char __user *buf,
 
 			if (gpio_get_value(nqx_dev->irq_gpio))
 				break;
-			dev_err_ratelimited(&nqx_dev->client->dev,
+			dev_dbg(&nqx_dev->client->dev,
 			"gpio is low, no need to read data\n");
 		}
 	}
@@ -285,7 +288,7 @@ static ssize_t nfc_write(struct file *filp, const char __user *buf,
 
 	ret = i2c_master_send(nqx_dev->client, tmp, count);
 	if (ret != count) {
-		dev_err(&nqx_dev->client->dev,
+		dev_dbg(&nqx_dev->client->dev,
 		"%s: failed to write %d\n", __func__, ret);
 		ret = -EIO;
 		goto out_free;

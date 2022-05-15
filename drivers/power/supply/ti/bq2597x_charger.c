@@ -152,7 +152,7 @@ do {											\
 	else if (bq->mode == BQ25970_ROLE_SLAVE)					\
 		printk(KERN_ERR "[bq2597x-SLAVE]:%s:" fmt, __func__, ##__VA_ARGS__);	\
 	else										\
-		printk(KERN_ERR "[bq2597x-S]:%s:" fmt, __func__, ##__VA_ARGS__);\
+		printk(KERN_ERR "[bq2597x-STANDALONE]:%s:" fmt, __func__, ##__VA_ARGS__);\
 } while (0);
 
 #define bq_info(fmt, ...)								\
@@ -1629,10 +1629,8 @@ static int bq2597x_parse_dt(struct bq2597x *bq, struct device *dev)
 
 	bq->vbat_calibrate = 0;
 
-	if (ret) {
-		//bq_err("failed to read vbat_calibrate\n");
+	if (ret)
 		bq->vbat_calibrate = 0;
-	}
 
 	pr_info("hw_version = %d, chip_vendor = %d, mass_production = %d, vbat_calibrate = %d\n", bq->hw_version, bq->chip_vendor, bq->mass_production, bq->vbat_calibrate);
 
