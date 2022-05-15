@@ -17,14 +17,17 @@
 
 # import helper function
 . ./tools.sh
-    
+
 # extra var
 HEADER="K E R N E L • S W E E T • S W E E T I N"
 
 export KBUILD_BUILD_USER="mARk"
 export KBUILD_BUILD_HOST="linux"
 
-TC=clang15_20220402f
+#toolchain dir that you will be using to cross-compile the kernel
+TCDIR=$HOME/toolchain/clang15_20220402
+
+#TCARM32=arm-eabi-gcc
 PRODUCT=sweet
 ANDROID=MiuiR
 PLATFORM=sdmmagpie
@@ -39,22 +42,24 @@ LOG=changelog
 
 # main script
     dp_header
+
+    check_prev_build #comment this line when don't need this
     check_anykernel
     check_toolchain
     make_kernel
     start_build
     check_build
-    
-ZIPNAME="boot.mARkOS.$TAG.$ANDROID.$PRODUCT-$TIME.zip"
 
 # packing and checking kernel image
+ZIPNAME="boot.mARkOS.$TAG.$ANDROID.$PRODUCT-$TIME.zip"
+
 if [ -f $b1 ] && [ -f $b2 ] && [ -f $b3 ]; then
     sign_dtbo
     mk_log
     do_zip
+    do_clean
 else
     print_error
 fi;
 
-    do_clean
     dp_footer
