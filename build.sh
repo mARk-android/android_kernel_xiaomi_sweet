@@ -25,7 +25,7 @@ export KBUILD_BUILD_USER="mARk"
 export KBUILD_BUILD_HOST="linux"
 
 #toolchain dir that you will be using to cross-compile the kernel
-TCDIR=$HOME/toolchain/clang15_20220402
+TCDIR=$HOME/toolchain/clang15_20220504
 
 #TCARM32=arm-eabi-gcc
 PRODUCT=sweet
