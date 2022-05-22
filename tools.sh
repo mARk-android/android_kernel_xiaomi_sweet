@@ -43,16 +43,14 @@ config_var () {
 echo build_vers >> build_vers
 TAG=$(grep VERSION Makefile | head -n1 | awk '{print $3}').$(grep PATCHLEVEL Makefile | head -n1 | awk '{print $3}').$(grep SUBLEVEL Makefile | head -n1 | awk '{print $3}');
 COMMIT=$(git rev-parse --verify --short=8 HEAD)
-COUNTER=$(cat -n build_vers | tail -1 | awk '{print $1}')
 OKEY="\033[0;32m\xE2\x9C\x94\033[0m";
 ERR="\033[0;31m\xE2\x9C\x95\033[0m";
 KERNEL_DIR=$(pwd)
 PARENT_DIR="$(dirname "$KERNEL_DIR")"
 STRIP="aarch64-linux-gnu-strip"
-TIME=$(date +%Y%m%d-%H%M)
 A3=AnyKernel3
 TMP=$(mktemp $A3/XXXXXXXXXXX.$$.tmp)
-export KBUILD_BUILD_TIMESTAMP="$(date -R | awk '{print $3}') $(date -R | awk '{print $2}') $(date -R | awk '{print $4}') $(date -R | awk '{print $5}') #$COUNTER"
+export COUNTER=$(cat -n build_vers | tail -1 | awk '{print $1}')
 export PATH="$TCDIR/bin:$PATH"
 export LD_LIBRARY_PATH="$TCDIR/lib:$LD_LIBRARY_PATH"
 
@@ -240,6 +238,7 @@ check_log () {
 
 do_changelog_header () {
 # make header builtin log and cut to previos kernel merge
+	TIME=$(date -r $out/.version "+%Y%m%d-%H%M");
 	T=$(grep SUBLEVEL Makefile | head -n1 | awk '{print $3}');
 	S=$(($T-1));
 	sed  -i '1i\=============================================='   $TMP

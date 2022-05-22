@@ -25,7 +25,7 @@ export KBUILD_BUILD_USER="mARk"
 export KBUILD_BUILD_HOST="linux"
 
 #toolchain dir that you will be using to cross-compile the kernel
-TCDIR=$HOME/toolchain/clang15_20220504
+TCDIR=$HOME/toolchain/clang15_20220517
 
 #TCARM32=arm-eabi-gcc
 PRODUCT=sweet
@@ -51,7 +51,7 @@ LOG=changelog
     check_build
 
 # packing and checking kernel image
-ZIPNAME="boot.mARkOS.$TAG.$ANDROID.$PRODUCT-$TIME.zip"
+ZIPNAME="boot.mARkOS.$TAG.$ANDROID.$PRODUCT-$(date -r $out/.version "+%Y%m%d-%H%M").zip"
 
 if [ -f $b1 ] && [ -f $b2 ] && [ -f $b3 ]; then
     sign_dtbo
