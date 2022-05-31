@@ -655,7 +655,7 @@ static void cpe_notify_cmi_client(struct cpe_info *t_info, u8 *payload,
 	service = CMI_HDR_GET_SERVICE(hdr);
 
 	notif.event = CMI_API_MSG;
-	notif.result = result;
+	notif.result = (enum cmi_api_result)result;
 	notif.message = payload;
 
 	CPE_SVC_GRAB_LOCK(&cpe_d.cpe_svc_lock, "cpe_svc");
@@ -1347,7 +1347,7 @@ static enum cpe_process_result cpe_mt_process_cmd(
 
 		cpe_change_state(t_info, CPE_STATE_SENDING_MSG,
 				CPE_SS_MSG_SEND_INBOX);
-		rc = cpe_send_msg_to_inbox(t_info, 0, m);
+		rc = (enum cpe_process_result)cpe_send_msg_to_inbox(t_info, 0, m);
 		break;
 
 	case CPE_CMD_SEND_MSG_COMPLETE:
@@ -2293,7 +2293,7 @@ static enum cpe_svc_result cpe_tgt_wcd9335_boot(int debug_mode)
 				WCD9335_CPE_SS_WDOG_CFG,
 				0x3f, 0x31);
 	else
-		pr_info("%s: CPE in debug mode, WDOG disabled\n",
+		pr_debug("%s: CPE in debug mode, WDOG disabled\n",
 			__func__);
 
 	rc |= cpe_register_write(WCD9335_CPE_SS_CPARMAD_BUFRDY_INT_PERIOD, 19);
